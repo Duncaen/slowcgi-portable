@@ -1,0 +1,5 @@
+*.o
+slowcgi
+config.h
+config.log
+Makefile.configure
