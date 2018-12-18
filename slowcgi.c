@@ -54,6 +54,10 @@
 # define __packed __attribute__((__packed__))
 #endif
 
+#ifndef WAIT_ANY
+# define WAIT_ANY -1
+#endif
+
 #define TIMEOUT_DEFAULT		 120
 #define SLOWCGI_USER		 "www"
 
