@@ -16,19 +16,26 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "config.h"
+
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <sys/queue.h>
+#if HAVE_SYS_QUEUE
+# include <sys/queue.h>
+#endif
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/un.h>
 #include <sys/wait.h>
 #include <arpa/inet.h>
-#include <err.h>
+#if HAVE_ERR
+# include <err.h>
+#endif
 #include <fcntl.h>
 #include <errno.h>
 #include <event.h>
+#include <grp.h>
 #include <limits.h>
 #include <pwd.h>
 #include <signal.h>
@@ -38,6 +45,14 @@
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
+
+#ifndef	__dead
+# define __dead __attribute__((__noreturn__))
+#endif
+
+#ifndef	__packaged
+# define __packed __attribute__((__packed__))
+#endif
 
 #define TIMEOUT_DEFAULT		 120
 #define SLOWCGI_USER		 "www"
@@ -359,8 +374,10 @@ main(int argc, char *argv[])
 	    setresuid(pw->pw_uid, pw->pw_uid, pw->pw_uid))
 		lerr(1, "unable to revoke privs");
 
+#if HAVE_PLEDGE
 	if (pledge("stdio rpath unix proc exec", NULL) == -1)
 		lerr(1, "pledge");
+#endif
 
 	SLIST_INIT(&slowcgi_proc.requests);
 	event_init();
@@ -436,12 +453,17 @@ accept_reserve(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
 	int reserve, volatile int *counter)
 {
 	int ret;
+	/*
+	 * FIXME: add getdtablecount(2),getdtablesize(2) compatibility
+	 */
+#if HAVE_GETDTABLECOUNT
 	if (getdtablecount() + reserve +
 	    (*counter * FD_NEEDED) >= getdtablesize()) {
 		ldebug("inflight fds exceeded");
 		errno = EMFILE;
 		return -1;
 	}
+#endif
 
 	if ((ret = accept4(sockfd, addr, addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC))
 	    > -1) {
@@ -924,8 +946,10 @@ exec_cgi(struct request *c)
 		return;
 	case 0:
 		/* Child process */
+#if HAVE_PLEDGE
 		if (pledge("stdio rpath exec", NULL) == -1)
 			lerr(1, "pledge");
+#endif
 		close(s_in[0]);
 		close(s_out[0]);
 		close(s_err[0]);
