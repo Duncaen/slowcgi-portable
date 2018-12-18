@@ -723,7 +723,7 @@ parse_begin_request(uint8_t *buf, uint16_t n, struct request *c, uint16_t id)
 	}
 
 	if (n != sizeof(struct fcgi_begin_request_body)) {
-		lwarnx("wrong size %d != %lu", n,
+		lwarnx("wrong size %d != %zu", n,
 		    sizeof(struct fcgi_begin_request_body));
 		return;
 	}
